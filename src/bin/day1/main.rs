@@ -1,10 +1,7 @@
-use lib::io_utils::read_input_from_path;
-
-const INPUT_PATH: &str = "src/bin/day1/input.in";
-// const EXAMPLE_PATH: &str = "src/bin/day1/example.in";
+use lib::io_utils::read_input_for_day;
 
 fn part_one() -> u32 {
-    let input = read_input_from_path(INPUT_PATH);
+    let input = read_input_for_day(1);
 
     // split input on newlines and parse as vec of strings
     let lines: Vec<String> = input.lines().map(|el| el.to_string()).collect();
@@ -27,7 +24,7 @@ fn part_one() -> u32 {
 }
 
 fn part_two() -> u32 {
-    let input = read_input_from_path(INPUT_PATH);
+    let input = read_input_for_day(1);
 
     // split input on newlines and parse as vec of strings
     let lines: Vec<String> = input.lines().map(|el| el.to_string()).collect();

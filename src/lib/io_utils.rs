@@ -8,10 +8,6 @@ where
         .unwrap_or_else(|_| panic!("Could not read input from path: {:?}", path))
 }
 
-pub fn read_example() -> String {
-    read_input_from_path("src/bin/day1/input.example")
-}
-
-pub fn read_input() -> String {
-    read_input_from_path("input.in")
+pub fn read_input_for_day(day: u32) -> String {
+    read_input_from_path(format!("src/bin/day{}/input.in", day).as_str())
 }
