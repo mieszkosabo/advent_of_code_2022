@@ -136,3 +136,18 @@ fn part_two() -> i32 {
             acc + our_shape.to_score() + our_shape.play_round(&opponent_shape).to_score()
         })
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{part_one, part_two};
+
+    #[test]
+    fn test_part_one() {
+        assert_eq!(part_one(), 13484);
+    }
+
+    #[test]
+    fn test_part_two() {
+        assert_eq!(part_two(), 13433);
+    }
+}
