@@ -10,3 +10,9 @@ name = "lib"
 path = "src/lib/mod.rs"
 
 [dependencies]
+
+[dependencies.uuid]
+version = "1.2.2"
+features = [
+    "v4",                
+]
