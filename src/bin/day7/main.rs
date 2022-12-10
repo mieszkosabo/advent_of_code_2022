@@ -1,12 +1,39 @@
 use lib::{io_utils::read_input_for_day, tree::Tree};
 
 fn main() {
+    println!("Part One: {}", part_one());
+    println!("Part Two: {}", part_two());
+}
+
+fn part_one() -> usize {
     let input = read_input_for_day(7);
     let commands = parse_input(input);
 
     let fs = create_fs(commands);
 
-    println!("fs: {:?}", fs);
+    fs.0.into_iter()
+        .filter(|dir| dir.size <= 100_000)
+        .map(|dir| dir.size)
+        .sum()
+}
+
+const FILE_SYSTEM_SIZE: usize = 70000000;
+const MIN_SIZE_TO_FREE: usize = 30000000;
+
+fn part_two() -> usize {
+    let input = read_input_for_day(7);
+    let commands = parse_input(input);
+
+    let fs = create_fs(commands);
+
+    let root_dir_size = fs.0.into_iter().map(|dir| dir.size).max().unwrap();
+    let difference = MIN_SIZE_TO_FREE - (FILE_SYSTEM_SIZE - root_dir_size); // this will overflow if there is already that space available
+
+    fs.0.into_iter()
+        .map(|dir| dir.size)
+        .filter(|size| size >= &difference)
+        .min()
+        .unwrap()
 }
 
 #[derive(Debug)]
@@ -19,7 +46,7 @@ enum Command {
 
 #[derive(Debug)]
 enum SingleListOutput {
-    File { size: usize, name: String },
+    File { size: usize },
     Dir(String),
 }
 
@@ -29,6 +56,7 @@ struct FileSystem(Tree<Directory>);
 #[derive(Debug)]
 struct Directory {
     name: String,
+    size: usize,
     files: Vec<File>,
 }
 
@@ -37,23 +65,24 @@ impl Directory {
         Self {
             files: vec![],
             name,
+            size: 0,
         }
     }
 
     fn add_file(&mut self, file: File) {
+        self.size += file.size;
         self.files.push(file);
     }
 }
 
 #[derive(Debug)]
 struct File {
-    name: String,
     size: usize,
 }
 
 impl File {
-    fn new(name: String, size: usize) -> Self {
-        Self { name, size }
+    fn new(size: usize) -> Self {
+        Self { size }
     }
 }
 
@@ -76,14 +105,26 @@ fn create_fs(commands: Vec<Command>) -> FileSystem {
                 curr_dir = root_dir;
             }
             Command::MoveUp => {
-                curr_dir = t.get_node(&curr_dir).unwrap().parent.unwrap();
+                let curr_node = t.get_node(&curr_dir).unwrap();
+                let parent_id = curr_node.parent.unwrap();
+                let child_size = curr_node.data.size;
+
+                // don't update parent if it is the root since
+                // we update the root at the end
+                if parent_id != root_dir {
+                    t.update_node(parent_id, &|parent| {
+                        parent.data.size += child_size;
+                    });
+                }
+
+                curr_dir = parent_id;
             }
             Command::List(outputs) => {
                 for output in outputs {
                     match output {
-                        SingleListOutput::File { size, name } => {
+                        SingleListOutput::File { size } => {
                             t.update_node(curr_dir, &|node| {
-                                node.data.add_file(File::new(name.clone(), size));
+                                node.data.add_file(File::new(size));
                             });
                         }
                         SingleListOutput::Dir(dir_name) => {
@@ -95,6 +136,20 @@ fn create_fs(commands: Vec<Command>) -> FileSystem {
         }
     }
 
+    let root_children_sizes: Vec<usize> = t
+        .get_node(&root_dir)
+        .unwrap()
+        .children
+        .iter()
+        .map(|c| t.get_node(c).unwrap().data.size)
+        .collect();
+
+    // update the root
+    t.update_node(root_dir, &|root| {
+        root_children_sizes.iter().for_each(|size| {
+            root.data.size += size;
+        });
+    });
     FileSystem(t)
 }
 
@@ -111,7 +166,7 @@ fn parse_input(input: String) -> Vec<Command> {
                 dir_name => res.push(Command::ChangeDir(dir_name.to_string())),
             },
             "ls" => {
-                let ls_output_iter = input.to_owned().take_while(|l| !l.starts_with("$"));
+                let ls_output_iter = input.to_owned().take_while(|l| !l.starts_with('$'));
                 let mut outputs = vec![];
                 for out in ls_output_iter {
                     let mut out_iter = out.split_ascii_whitespace();
@@ -121,7 +176,6 @@ fn parse_input(input: String) -> Vec<Command> {
                             .push(SingleListOutput::Dir(out_iter.next().unwrap().to_string())),
                         size => outputs.push(SingleListOutput::File {
                             size: size.parse().unwrap(),
-                            name: out_iter.next().unwrap().to_string(),
                         }),
                     };
                     input.next();
@@ -133,4 +187,19 @@ fn parse_input(input: String) -> Vec<Command> {
     }
 
     res
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{part_one, part_two};
+
+    #[test]
+    fn test_part_one() {
+        assert_eq!(part_one(), 2031851);
+    }
+
+    #[test]
+    fn test_part_two() {
+        assert_eq!(part_two(), 2568781);
+    }
 }

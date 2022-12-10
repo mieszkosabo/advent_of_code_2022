@@ -84,6 +84,44 @@ impl<T: Debug> Tree<T> {
     }
 }
 
+impl<'a, T: Debug> IntoIterator for &'a Tree<T> {
+    type Item = &'a T;
+    type IntoIter = TreeIter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        TreeIter::from(self)
+    }
+}
+
+impl<'a, T: Debug> Iterator for TreeIter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let idx = self.idx;
+        self.idx += 1;
+        let node_id = self.node_ids.get(idx)?;
+
+        self.tree.get_node(node_id).map(|node| &node.data)
+    }
+}
+
+pub struct TreeIter<'a, T: Debug> {
+    tree: &'a Tree<T>,
+    idx: usize,
+    node_ids: Vec<NodeId>,
+}
+
+impl<'a, T: Debug> From<&'a Tree<T>> for TreeIter<'a, T> {
+    fn from(t: &'a Tree<T>) -> Self {
+        let ids = t.nodes.keys().map(|id| id.to_owned()).collect();
+        Self {
+            tree: t,
+            idx: 0,
+            node_ids: ids,
+        }
+    }
+}
+
 pub type NodeId = Uuid;
 
 #[derive(Debug)]
