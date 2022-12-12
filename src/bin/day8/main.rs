@@ -4,6 +4,12 @@ type Matrix2D<T> = Vec<Vec<T>>;
 
 fn main() {
     let input = read_input_for_day(8);
+
+    println!("Part One: {:?}", part_one(input.clone()));
+    println!("Part Two: {:?}", part_two(input));
+}
+
+fn part_one(input: String) -> usize {
     let data = parse_input(input);
     let (left, top, right, bottom) = precalculate_max_hights(&data);
 
@@ -23,7 +29,7 @@ fn main() {
     }
     visible = visible + 2 * width + 2 * height - 4;
 
-    println!("Part One: {:?}", visible);
+    visible
 }
 
 fn precalculate_max_hights(
@@ -92,6 +98,52 @@ fn precalculate_max_hights(
         max_heights_right,
         max_heights_bottom,
     )
+}
+
+fn part_two(input: String) -> usize {
+    let data = parse_input(input);
+    let width = data[0].len();
+    let height = data.len();
+    let mut max_scenic_score = 1;
+
+    for x in 0..width {
+        for y in 0..height {
+            let tree_height = data[x][y];
+            let mut score = (0, 0, 0, 0);
+
+            for i in (0..y).rev() {
+                score.0 += 1;
+                if data[x][i] >= tree_height {
+                    break;
+                }
+            }
+            for i in (y + 1)..height {
+                score.1 += 1;
+                if data[x][i] >= tree_height {
+                    break;
+                }
+            }
+            for i in (0..x).rev() {
+                score.2 += 1;
+                if data[i][y] >= tree_height {
+                    break;
+                }
+            }
+            for i in (x + 1)..width {
+                score.3 += 1;
+                if data[i][y] >= tree_height {
+                    break;
+                }
+            }
+
+            let local_scenic_score = score.0 * score.1 * score.2 * score.3;
+            if local_scenic_score > max_scenic_score {
+                max_scenic_score = local_scenic_score;
+            }
+        }
+    }
+
+    max_scenic_score
 }
 
 fn parse_input(input: String) -> Matrix2D<i32> {
